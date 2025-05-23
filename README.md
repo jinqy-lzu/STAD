@@ -1,5 +1,5 @@
 
-## Identification and Validation of the Molecular Subgroups of Ovarian Cancer and Its Related Cancers using a Self-supervised Machine Learning Method Based on Disulfidptosis-Related Genes
+## Deep Learning and Multi-Omics Reveal PANoptosis-Related Signatures and Prognostic Biomarkers in Gastric Cancer
 
 ## Requirements
 - Python3

@@ -13,45 +13,11 @@ class EnsembleClustering:
         self.n_clusters = n_clusters
         self.random_state = random_state
         # Initialize different clustering algorithms
-        self.kmeans = KMeans(n_clusters=self.n_clusters, random_state=self.random_state)
-        self.gmm = GaussianMixture(n_components=self.n_clusters, random_state=self.random_state)
-        self.dbscan = DBSCAN(eps=9, metric="euclidean",min_samples=2, algorithm="auto")
-        #层次聚类
-        self.clara = AgglomerativeClustering(n_clusters=self.n_clusters,metric="euclidean")
-        self.initial_medoids = list(range(self.n_clusters))
-        # self.mean_shift = MeanShift()#均值漂移
+        # #Organizing in progress............
         
     def fit_predict(self, X):
         # Fit each clustering algorithm
-        kmeans_labels = self.kmeans.fit_predict(X)
-        clara_labels = self.clara.fit_predict(X)
-        # dbscan_labels = self.dbscan.fit_predict(X)
-        gmm_labels = self.gmm.fit_predict(X)
-        #PAM
-        metric = distance_metric(type_metric.EUCLIDEAN)
-        pam_instance = kmedoids(X, self.initial_medoids,metric=metric)#metric="euclidean"
-        pam_instance.process()
-        pam_labels = np.zeros(len(X))
-        for cluster_id, cluster in enumerate(pam_instance.get_clusters()):
-            for index in cluster:
-                pam_labels[index] = cluster_id
-        
-         # CLARA
-        
-        clarans_instance = clarans(X.tolist(), numlocal=5, maxneighbor=1, number_clusters=self.n_clusters)
-        clarans_instance.process()
-        clarans_labels = np.zeros(len(X))
-        for cluster_id, cluster in enumerate(clarans_instance.get_clusters()):
-            for index in cluster:
-                clarans_labels[index] = cluster_id
-        # Aggregate labels from each algorithm
-        all_labels = np.vstack((kmeans_labels, clarans_labels, clara_labels, pam_labels, gmm_labels))
-        
-        # Voting to determine final labels
-        final_labels = []
-        for i in range(all_labels.shape[1]):
-            labels, counts = np.unique(all_labels[:, i], return_counts=True)
-            final_labels.append(labels[np.argmax(counts)])
+        # #Organizing in progress............
         
         return np.array(final_labels)
 def get_train_data(filepath, select_data = None):
@@ -85,11 +51,10 @@ if __name__ == "__main__":
     # Fit and predict
     final_labels = ensemble.fit_predict(exp)
     
-    # 创建 DataFrame，将 samples_name 和 final_labels 合并
     data = {'SampleName': samples_name[:-1], 'Label': final_labels}
     df = pandas.DataFrame(data)
 
-    # 写入 CSV 文件
+
     df.to_csv(label_file, index=False)
     # Print the final labels
     print("Final labels:", final_labels)

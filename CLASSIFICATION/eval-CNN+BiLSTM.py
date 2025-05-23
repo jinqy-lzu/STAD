@@ -28,30 +28,9 @@ select_gene = [
 class BiLSTMClassifier(nn.Module):
     def __init__(self, input_size, hidden_size, num_classes, num_layers=1):
         super(BiLSTMClassifier, self).__init__()
-        def conv1x1(in_channels, out_channels, stride=1):
-            return nn.Conv1d(in_channels, out_channels, kernel_size=1, padding=0, stride=stride, bias=False,groups=1)
-        def conv3x3(in_channels, out_channels, stride=1, groups=1):
-            return nn.Conv1d(in_channels, out_channels, kernel_size=3, padding=1, stride=stride, bias=False,
-                             groups=groups)
-        self.input_channel = 1
-        setattr(self, 'transfer1', nn.Sequential(
-            conv1x1(in_channels=self.input_channel, out_channels=hidden_size),
-            nn.BatchNorm1d(hidden_size),
-            nn.ReLU(inplace=True),
-        ))
-        
-        self.lstm = nn.LSTM(input_size*hidden_size, hidden_size, num_layers, batch_first=True,bidirectional=True)
-        self.fc = nn.Linear(hidden_size*2, num_classes)
+        #Organizing in progress............
     def forward(self, x):
-        x = x.reshape(x.shape[0], 1, -1)
-        #卷积扩充数据
-        x = getattr(self, "transfer1")(x)
-        b,h,l = x.shape
-        x = x.view(b, h*l).contiguous()
-        # x = self.linear_proj(x)
-        out, _ = self.lstm(x)
-        out = self.fc(out)
-        out = F.softmax(out,dim=1)
+         #Organizing in progress............
         return out
 
 
@@ -66,7 +45,6 @@ class CsvDataset(Dataset):
         print(f'the shape of dataframe is {df.shape}')
         feat = df.iloc[:, :-1].astype(float).values
         label = df.iloc[:, -1].astype(float).values
-        # iloc就像python里面的切片操作,此处得到的是numpy数组
         self.x = torch.from_numpy(feat)
         self.y = torch.from_numpy(label)
     def __len__(self):
@@ -85,14 +63,14 @@ def creat_split_loader(batch_size = 64,file_path = '',select_data = [], test_siz
 def mix_loader(batch_size = 64,test_file_path = '',train_file_path = "", train_ratio = 0.7,select_data = []):
     dataset1 = CsvDataset(test_file_path, select_data=select_data)
     dataset2 = CsvDataset(train_file_path, select_data=select_data)
-    combined_dataset = ConcatDataset([dataset1, dataset2])#拼接
-    # 计算分割索引
+    combined_dataset = ConcatDataset([dataset1, dataset2])
+
     total_size = len(combined_dataset)
     train_size = int(total_size * train_ratio)
     test_size = total_size - train_size
-    # 按比例分割数据集
+
     train_dataset, test_dataset = random_split(combined_dataset, [train_size, test_size])
-    # 创建数据加载器
+
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
     return train_loader, test_loader
@@ -205,7 +183,6 @@ import numpy as np
 from sklearn.metrics import roc_curve, auc
 import matplotlib.pyplot as plt
 def draw_auc(y_score, y_true, path, dataset):
-    #将list中的内容进行拼接
     for i,item in enumerate(y_score):
         if i == 0:
             score = item
@@ -218,7 +195,6 @@ def draw_auc(y_score, y_true, path, dataset):
         else:  
             score  = torch.cat((score, item), dim=0)  
     y_true = np.array(score.cpu().detach())
-    # 对每个类计算 ROC 曲线和 AUC 值
     n_classes = y_score.shape[1]
     fpr = {}
     tpr = {}
@@ -226,7 +202,7 @@ def draw_auc(y_score, y_true, path, dataset):
     for i in range(n_classes):
         fpr[i], tpr[i], _ = roc_curve(y_true == i, y_score[:, i])
         roc_auc[i] = auc(fpr[i], tpr[i])
-    # 绘制所有类别的 ROC 曲线
+
     plt.figure()
     for i in range(n_classes):
         plt.plot(fpr[i], tpr[i], label=f'Subtypes {i+1} (area = {roc_auc[i]:.2f})')
@@ -234,10 +210,10 @@ def draw_auc(y_score, y_true, path, dataset):
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.05])
     print('AUC-predict_depth:',roc_auc)
-    plt.legend()                       # 图例的位置，可以有参数，无参数的话默认右上角
-    plt.xlabel(u'False Positive Rate')                 # 横轴名称
-    plt.ylabel(u'True Positive Rate')                 # 纵轴名称
-    plt.savefig('{}/{}-roc-auc.pdf'.format(path, dataset),format='pdf') # 保存图片
+    plt.legend()                       
+    plt.xlabel(u'False Positive Rate')            
+    plt.ylabel(u'True Positive Rate')               
+    plt.savefig('{}/{}-roc-auc.pdf'.format(path, dataset),format='pdf') 
     
 def main():
     parser = argparse.ArgumentParser()
@@ -261,14 +237,11 @@ def main():
     gpu_id = int(args.gpu_id)
     lucky_number = 3407
     seed_torch(lucky_number)
-
-    # model = CNN_GRU_V1(feature= 8,out_class=3)#feature为一个样本包含的基因数量
     model = BiLSTMClassifier(input_size= 8, hidden_size=128, num_classes=3,num_layers=3)
     train_list = nn.ModuleList([])
     train_list.append(model)
     optimizer = optim.SGD(train_list.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
     logger = tb_logger.Logger(logdir='./eval-CNN+BiLSTM/{}/tensorboard_{}'.format(dataset,args.trail), flush_secs=2)
-    # 定义损失函数和优化器
     model_list = nn.ModuleList([])
     model_list.append(model)
     model_list.cuda()
@@ -277,7 +250,7 @@ def main():
     criterion.append(L_CE_Loss)
     criterion.cuda()
     cudnn.benchmark = True
-    #加载模型权重
+   
     if args.best_model_path != '':
         print(f'Loading pretrained checkpoint from {args.best_model_path}')
         ckpt = torch.load(args.best_model_path, map_location='cpu')
@@ -291,7 +264,7 @@ def main():
             print(f'Missing keys in source state dict: {missing_keys}')
         if len(unexpected_keys) != 0:
             print(f'Unexpected keys in source state dict: {unexpected_keys}')
-    #加载数据集
+   
     train_data, test_data =  creat_split_loader(batch_size=args.batch_size, file_path=args.train_file_path,
                                                 select_data=select_gene, test_size=0.5)
     best_acc = 0
